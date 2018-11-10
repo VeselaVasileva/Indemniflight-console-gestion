@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <?!= include('css'); ?>
+    <?!= include('javascript'); ?>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+  </head>
+  
+  <body>
+      <h1>Console de gestion</h1>
+      <form id="affichage" onSubmit="return false">
+         <label for="clear">Console :</label>
+         <input type="submit" id="clear_console_gestion" name="clear" value="clear"/>
+         <div id="message"><p></p></div>
+         <hr/>
+         <input id="ouvrir_fiches" type="submit" value="Ouvrir la(les) fiche(s)"><br/>
+         <input id="ouvrir_dossiers" type="submit" value="Ouvrir le(s) dossier(s)" /><br/>
+         <hr/>
+         <input id="actu_console" type="submit" value="Actualiser la(les) ligne(s)"><br/>
+         <hr/>
+         <h2>Envoyer un mail à partir d'un template:</h2>
+         <select id="select_email">
+         </select><br/>
+         <input id="ecrire_email" type="submit" value="Écrire l'email" /><br/>
+      </form>
+      
+      <h2>Action sur le dossier :</h2> 
+      <select name="action" id="action" onChange="return false">
+         <option value="" selected="selected">Choix de l'action...</option>
+         <option value="consol_document">Gestion des documents</option>
+         <option value="consol_courrier_amiable">Gestion courrier amialble</option>
+         <option value="refus_indemni">Refus indemni compagnie</option>
+         <option value="MED">Mise en demeure</option>
+         <option value="indemn_ok">Indemnisation acceptée</option>
+         <option value="indemn_fact_vers">Facture et versement</option>
+         <option value="saisine_juge">Saisine Juge</option>
+         <option value="archiver">Archiver un dossier</option>
+         <option value="desarchiver">DésArchiver un dossier</option>
+      </select>
+      <hr />
+      <label for="mail_info_client">Envoi infos client</label>
+      <input type="checkbox" name="mail_info_client" id="mail_info_client" checked /><br />
+      <label for="modifier_mail_infos_client">Modifier mail avant envoi</label>
+      <input type="checkbox" name="mail_info_client" id="modifier_mail_infos_client" checked /><br />
+ 
+ 
+      <!-- Gestion des documents -->     
+      <div id="consol_document" class="element" >
+         <p class="Flex">
+          <form id="check_dossier" onSubmit="return false">
+            <input type="radio" name="documents_manquants" value="dossier_complet" id="dossier_complet" required/>
+            <label for="dossier_complet">Complet</label><br>
+            <input type="radio" name="documents_manquants" value="dossier_incomplet" id="dossier_incomplet" />
+            <label for="dossier_incomplet">Incomplet</label><br></p>
+          <input type="submit" id="Btn_Envoyer_Gestion_Doc" name="doc_verif" value="Envoyer"><br /><br /><br/>
+        </form>
+        <form id="regenerer_mandats">
+          <input type="submit" name="regenere_mandats" value="Regénérer les mandats"><br /><br />
+        </form>
+      </div>
+      
+<!-- Gestion courriers amiable -->
+      <form id="consol_courrier_amiable" class="element" OnSubmit="return false">
+        <input type="submit" name="folder_constitution" id="folder_constitution" value="PDFiser et générer dossier constitution"/><br /><br/>
+        <input type="submit" name="information_compagnie" id="information_compagnie" value="chercher infos compagnie"/><br/><br/>
+        <input type="submit" name="automate_1er_envoi" id="automate_1er_envoi" value="Automate envoi 1er lettre" />
+         
+        <h3>Charger le courrier de reclamation :</h3>
+         
+        <input type="submit" name="copier_lettre_reclam" id="copier_lettre_reclam_fr" value="en FR" />
+        <input type="submit" name="copier_lettre_reclam" id="copier_lettre_reclam_en" value="en EN" />
+        <input type="submit" name="copier_lettre_reclam" id="copier_lettre_reclam_fr-en" value="FR & EN" /><br/><br/>
+         
+        <button type=button id=copierCourrierReclamFr >Copier le courrier</button><br/><br/>
+   
+        <p class="Flex"><input type="radio" name="canal" value="Mail">Mail<br>
+        <input type="radio" name="canal" value="Site Internet">Site internet<br>
+        <input type="radio" name="canal" value="Courrier">Courrier<br></p>
+        <label for="commentaire_courrier_amiable"> Commentaire :</label>
+        <input type="text" name="commentaire" id="commentaire_courrier_amiable" value=""/><br />
+        <input type="submit" name="info_envoi_lettre_amiable" id="info_1ere_lettre_amiable" value="1ere lettre"><br />
+        <input type="submit" name="info_envoi_lettre_amiable" id="info_2eme_lettre_amiable" value="2eme lettre"><br /><br/>
+         
+        <input type="submit" name="premiere_lettre" id="regenerer_lettre" value="Regénérer la lettre amiable"><br /><br />
+         
+         <textarea id="tamponCourrier"></textarea>
+                   
+      </form>
+
+      <!--Refus indemnisation-->
+      <form id="refus_indemni" class="element">
+        <input type="radio" name="refus_indemnite" id="circonstance_extra" value="Circonstance extra" required>Circonstance extra<br/>
+        <input type="radio" name="refus_indemnite" id="condition_meteo" value="Condition météo" />Condition météo<br/>
+        <input type="radio" name="refus_indemnite" id="controle_aerien" value="Contrôle aérien" />Contrôle aérien<br/>
+        <input type="radio" name="refus_indemnite" id="urgence_medicale" value="Urgence médicale" />Urgence médicale<br/>
+        <input type="radio" name="refus_indemnite" id="securite_interieure" value="Sécurité intérieure" />Sécurité intérieure<br/>
+        <input type="radio" name="refus_indemnite" id="retard_moins_3h" value="Retard < 3h" />Retard < 3h<br/>
+        <input type="radio" name="refus_indemnite" id="proposition_avoir" value="Proposition avoir" />Proposition avoir<br/>
+        <input type="radio" name="refus_indemnite" id="demande_preuve" value="Demande de preuve" />Demande de preuve<br/>
+        <input type="radio" name="refus_indemnite" id="autre_circonstance" value="Autre" />Autre 
+        <input type="text" name="autre_circonstance_justif" id="autre_circonstance_justif" /><br/>
+        
+        <label for="num_dossier_compagnie">Référence de la compagnie</label>
+        <input type="text" name="num_dossier_compagnie" id="num_dossier_compagnie" required/><br />
+
+        <input type="submit" name="refus_indemnite" id="refus_indemnite" value="Envoyer" />
+      </form>
+   
+<div id="MED" class="element">
+  
+
+  <form id="mail_MED" name="mail_MED">
+    <h3>Envoi email client</h3>
+    <input type="radio" name="MED_refus_indemnite" id="MED_circonstance_extra" value="Circonstance extra" required/>Circonstance extra<br/>
+    <input type="radio" name="MED_refus_indemnite" id="MED_condition_meteo" value="Condition météo" />Condition météo<br/>
+    <input type="radio" name="MED_refus_indemnite" id="MED_controle_aerien" value="Contrôle aérien" />Contrôle aérien<br/>
+    <input type="radio" name="MED_refus_indemnite" id="MED_urgence_medicale" value="Urgence médicale" />Urgence médicale<br/>
+    <input type="radio" name="MED_refus_indemnite" id="MED_securite_interieure" value="Sécurité intérieure" />Sécurité intérieure<br/>
+    <input type="radio" name="MED_refus_indemnite" id="MED_retard_moins_3h" value="Retard < 3h" />Retard < 3h<br/>
+    <input type="radio" name="MED_refus_indemnite" id="MED_proposition_avoir" value="Proposition avoir" />Proposition avoir<br/>
+    <input type="radio" name="MED_refus_indemnite" id="MED_demande_preuve" value="Demande de preuve" />Demande de preuve<br/>
+    <input type="radio" name="MED_refus_indemnite" id="MED_autre_circonstance" value="Autre" />Autre 
+    <input type="text" name="MED_refus_autre_circonstance_justif" id="MED_autre_circonstance_justif" /><br/>
+    <input type="radio" name="MED_refus_indemnite" id="MED_pas_de_reponse" value="Pas de réponse" />Pas de réponse<br />
+        
+    <label for="MED_num_dossier_compagnie">Référence de la compagnie</label>
+    <input type="text" name="num_dossier_compagnie" id="MED_num_dossier_compagnie" required/><br />
+
+    <input type="submit" name="mail_info_MED" id="mail_info_MED" value="Envoyer" />
+  </form>
+
+  <!--Affecter un avocat-->
+  <form id="affect_avocat"  name="affect_avocat">
+    <h3>Choix avocat</h3>
+    <select id="choix_avocats"></select><br/>
+    <input type="submit" name="envoyer" id="affecter_avocat" value="Affecter" /><br />
+  </form>
+</div>  
+
+  <!--Indemnisation OK-->
+  <div id="indemn_ok" class="element">
+  <form id="indemn_acceptee">
+    <label for="ref_dossier" >Entrez la référence du dossier <strong>(obligatoire)</strong>:</label><br/>
+    <input type=text id= "ref_dossier" name="ref_dossier" value="" required/><br/>
+    <input type="submit" name="info_indemn_acceptee" id="info_indemn_acceptee" value="Prévenir client indemnisation OK"><br /><br />
+  </form>
+  <form id="rib">  
+    <input type="submit" name="verif_rib" id="rappel_rib" value="Envoyer un rappel RIB" /><br /><br/>
+    <input type="submit" name="verif_rib" id="reception_rib" value="Envoyer mail reception RIB" /><br/><br/>
+ </form>
+ </div>
+
+ <!--Facture et versement-->
+ <form id="indemn_fact_vers" class="element" OnSubmit="return false">
+  <h3>Prevenir le client de son indemnisation :</h3>
+  <input type="submit" name="generer_facture" id="generer_facture" value="Prévenir client indemnisé" /><br />
+  
+  <input type="checkbox" name="trustpilot" id="trustpilot" value="trustpilot"  ><label for="trustpilot">Trustpilot</label><br /><br />
+  <input type="submit" name="calcul_reverse" id="calcul_reverse" value="Calculer le montant reversé" /><br /><br /> 
+</form>
+
+<!--Saisine juge-->
+<form id="saisine_juge" class="element" name="saisine_juge" OnSubmit="return false">
+  <input type="submit" name="set_environnement" id="set_environnement" value="Déployer environnement " ><br />
+  <input type="submit" name="tracer_saisine" id="tracer_saisine" value="Tracer saisine"><br />
+  <!--<input type="submit" name="preparation_saisine" id="preparation_saisine" value="Préparation de la saisine" ><br />-->
+ 
+</form>
+
+
+<!--Archivage-->
+<form id="archiver" class="element">
+  <h3>Motif Archivage</h3>
+  <input type="radio" name="motif_archive" id="archive_test" value="Archivé test interne" required>Test interne<br>
+  <input type="radio" name="motif_archive" id="archive_dde_clt" value="Archivé sur demande du client">Sur demande du client<br>
+  <input type="radio" name="motif_archive" id="archive_doublon" value="Archivé dossier en doublon">Dossier en doublon<br>
+  <input type="radio" name="motif_archive" id="archive_non_idem_interne_reglementation" value="Non indemnisable avant confrontation avec la compagnie:hors réglementaion">Non indemnisable avant confrontation avec la compagnie : hors réglementaion<br>
+  <input type="radio" name="motif_archive" id="archive_non_idem_interne_circonstance_extra" value="Non indemnisable avant confrontation avec la compagnie : circonstance extra">Non indemnisable avant confrontation avec la compagnie : circonstance extra<br>
+  <input type="radio" name="motif_archive" id="archive_non_idem_compagnie_reglementation" value="Non indemnisable après confrontation avec la compagnie:hors réglementaion">Non indemnisable après confrontation après la compagnie : hors réglementaion<br>
+  <input type="radio" name="motif_archive" id="archive_non_idem_compagnie_circonstance_extra" value="Non indemnisable après confrontation avec la compagnie : circonstance extra">Non indemnisable après confrontation avec la compagnie : circonstance extra<br>
+  <input type="radio" name="motif_archive" id="archive_indemnise" value="Archivé indemnisé">Dossier indemnisé<br>
+  <laber for="commentaire_archive">Commentaire :</laber><input type="text" id="commentaire_archive" name="commentaire_archive" value="" required/><br />
+  <input type="checkbox" name="archive_verif" id="archive_verif" value="archive_verif" /><label for="archive_verif">Confirmer l'archivage du dossier</label><br />
+  <input type="submit" value="Archiver le(s) dossier(s)"><br />
+</form>
+
+<!--Désarchiver-->
+<form id="desarchiver" class="element">
+  <h3>Désarchivage :</h3>
+  <input type="radio" name="motif_desarchive" id="archive_erreur" value="Archivé par erreur" required>Archivé par erreur<br>
+  <input type="radio" name="motif_desarchive" id="nvx_elements" value="Nouveaux éléments communiqués">Nouveau éléments communiqué<br>
+  <input type="radio" name="motif_desarchive" id="desarchive_dde_clt" value="Demande du client">Demande du client<br>
+  <label for="commentaire_desarchive">Commentaire : </label><input type="text" id="commentaire_desarchive" name="commentaire_desarchive" value="" required/><br />
+  <input type="checkbox" name="desarchive_verif" id="desarchive_verif" value="desarchive_verif" /><label for="desarchive_verif">Confirmer le désarchivage du dossier</label><br />
+  <input type="submit" value="DésArchiver le(s) dossier(s)" ><br />
+</form>
+</body>
+  
+</html>

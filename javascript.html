@@ -1,0 +1,705 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+
+////////////////////////////////Chargement des différents éléments au lancement de la console//////////////////////
+   
+$(document).ready(function(){
+    google.script.run.withSuccessHandler(remplir_liste_deroulante_mails).start_function("recuperer_choix_mail",""); 
+    google.script.run.withSuccessHandler(remplir_liste_deroulante_avocats).start_function("recuperer_choix_avocats","");
+
+  $("input[name=clear]").click(function(){
+     $("#message").text("");
+  });
+ 
+  $("#ouvrir_fiches").click(function(){
+    click_action(open_spreadsheets,"openFiles","");
+  });
+
+  $("#ouvrir_dossiers").click(function(){
+    click_action(open_dossiers,"openFolders","");
+  });
+
+  $("#actu_console").click(function(){
+    click_action(workOff,"actu_infos_console","");
+  });
+   
+  $("#ecrire_email").click(function(){
+    var type_email=$("#select_email :selected").text();
+    click_action(workOff,"generer_emails_gas",type_email)
+  });
+
+  $("#envoyer_email").click(function(){  
+    envoyer_email();
+  });
+  
+  $("#action").change(function(){
+    getaction(this.parentNode);
+  });
+  
+  
+  $("#check_dossier").submit(function(){
+    if ($('input[name=documents_manquants]:checked').val()==undefined){
+      workOff("{\"message\" : \"Sélectionner si le dossier est complet ou incomplet.\"}");
+      return false;
+    }
+    if($('#mail_info_client').prop("checked")){    
+      var type_email_name = $('input[name=documents_manquants]:checked').val();
+      var type_email_modifiable = $('#modifier_mail_infos_client').prop("checked");
+      var type_email = "{\"name\":\""+type_email_name+"\", \"modifiable\":"+type_email_modifiable+" }";
+      click_action(workOff,"generer_emails_gas_gestion_doc",type_email);
+    }else{
+      workOn()
+      var evenement;
+      var proch_event;
+      var statut;
+      var date_prevue="";
+      if ($('input[name=documents_manquants]:checked').val()=="dossier_complet"){
+        evenement = "Documents complets";
+        proch_event = "Envoyer dossier"; 
+        statut = "Constitution du dossier";
+      }
+      else if ($('input[name=documents_manquants]:checked').val()=="dossier_incomplet"){
+        evenement = "Documents incomplets";
+        proch_event = "Rappel demande doc"; 
+        statut = "Attente des documents";
+        date_prevue="J+5";
+      }
+      update_tracer(evenement,"",proch_event,date_prevue,statut,"","");
+      var e = "{\"message\":\"Tracer Mis à jour\"}";
+      workOff(e);
+    }
+    return false;
+    });
+
+    $('#regenerer_mandats').submit(function(){
+      click_action(workOff,"generer_mandats_current_range","");
+      return false
+    });
+    
+    $("#folder_constitution").click(function(){
+      click_action(workOff,"constit_dossier_pdf_current_range","");
+    });
+    
+    $("#information_compagnie").click(function(){
+      google.script.run.start_function("affiche_infos_compagnie","");
+    });
+
+    $('input[name=regenere_lettre_amiable]').click(function(){
+      click_action(workOff,"generer_lettre_amiable_current_range","");
+    });
+
+    $('input[name=info_envoi_lettre_amiable]').click(function(){
+    
+        var type_email_name = $(this).attr('id');
+        if($('#mail_info_client').prop("checked")){
+          var type_email_modifiable = $('#modifier_mail_infos_client').prop("checked");
+          var type_email = "{\"name\":\""+type_email_name+"\", \"modifiable\":"+type_email_modifiable+" }";
+          click_action(workOff,"generer_emails_gas_gestion_doc",type_email);
+         }
+      var evenement;
+      var proch_event;
+      var statut;
+      var date_prevue="J+15";
+      var canal=$('input[name=canal]:checked').val();
+      var commentaire=$('input[name=commentaire]').val();
+       if (type_email_name=="info_1ere_lettre_amiable"){
+        evenement="1er courrier envoyé";
+        proch_event="Envoyer 2ème fois dossier"; 
+        statut = "Attente d'un retour de la compagnie";
+       }   
+      else {
+        evenement="2ème courrier envoyé";
+        proch_event="Attente retour compagnie"; 
+        statut = "Attente d'un retour de la compagnie";
+      }
+    update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+    var e = "{\"message\":\"Tracer Mis à jour\"}";
+    workOff(e);
+    });
+ 
+
+    $('input[name=automate_1er_envoi]').click(function(){
+      var arguments = "{\"envoi_email_client\":"+$('#mail_info_client').prop("checked")+", \"modifiable\":"+$('#modifier_mail_infos_client').prop("checked")+" }";
+      click_action(workOff,"automate_lettre_amiable",arguments);
+    });
+
+   $('input[name=copier_lettre_reclam]').click(function(){
+      var langue = $(this).attr('id');
+      langue=langue.substring(langue.lastIndexOf('_')+1,langue.length);
+      click_action(copy_to_PP,"copier_courrier_amiable_current_range",langue);
+   });
+    
+    $('input[name=copierCourrierReclamFr]').click(function(){
+      var contenu=$("#tamponCourrier").text(contenu);
+      $("#tamponCourrier").text("");
+      return contenu;
+    });
+    
+    $("#regenerer_lettre").click(function(){
+      click_action(workOff,"generer_lettre_amiable_current_range","");
+     });
+    
+    $("#copierCourrierReclamFr").click(function(){
+      copier();
+     });
+    
+     $("input[name=refus_indemnite]").change(function(){
+       if($("#autre_circonstance").prop('checked')){
+        $("#autre_circonstance_justif").attr('required','required');
+        $("#autre_circonstance_justif").removeAttr('hidden');
+       }
+       else{
+        $("#autre_circonstance_justif").removeAttr('required');
+        $("#autre_circonstance_justif").val("");
+        $("#autre_circonstance_justif").attr('hidden','hidden');
+       }
+    });
+
+
+     $("#refus_indemni").submit(function(){
+      var arguments = toStringJSON('refus_indemni');
+      arguments = arguments.substring(0,arguments.length-1);
+      arguments = arguments+",\"mail_info_client\":"+$('#mail_info_client').prop("checked");
+      arguments = arguments +",\"type_email_name\":\""+$("input[name=refus_indemnite]:checked").attr('name')+"_"+$("input[name=refus_indemnite]:checked").attr('id');
+      arguments =  arguments + "\",\"type_email_modifiable\":"+$('#modifier_mail_infos_client').prop("checked")+"}";
+     
+      click_action(workOff,"refus_indemnite_compagnie",arguments);
+      
+      return false
+  });
+
+$("input[name=MED_refus_indemnite]").change(function(){
+       if($("#MED_autre_circonstance").prop('checked')){
+        $("#MED_autre_circonstance_justif").attr('required','required');
+        $("#MED_autre_circonstance_justif").removeAttr('hidden');
+       }
+       else{
+        $("#MED_autre_circonstance_justif").removeAttr('required');
+        $("#MED_autre_circonstance_justif").val("");
+        $("#MED_autre_circonstance_justif").attr('hidden','hidden');
+       }
+       if($("#MED_pas_de_reponse").prop('checked')){
+        $("#MED_num_dossier_compagnie").removeAttr('required');
+       }
+       else{
+        $("#MED_num_dossier_compagnie").attr('required','required');
+       }
+    });
+
+  $("#mail_MED").submit(function(){
+      var commentaire=$("input[name=MED_refus_indemnite]:checked").val()+" "+$("#MED_autre_circonstance_justif").val();
+      var documents=$("#MED_num_dossier_compagnie").val();
+      
+      var tracer="{\"type\":\"tracer\",\"id\":\"\",\"copie\":0, \"contenu\":[{\"Type event\":\"-> Client\",\"Evenement\":\"Mail info Mise en demeure\",\"Date\":\"\",\"Prochain évènement\":\"Affecter avocat\",\"Date prévue\":\"\",\"Statut dossier\":\"Transfert du dossier à un cabinet d'avocat\",\"Document relatif\":\""+documents+"\",\"Canal\":\"\",\"Commentaire\":\""+commentaire+"\"}]}";
+      click_action(workOff,"set_tracer",tracer);
+      google.script.run.start_function("set_circonstance_accident_current_range",commentaire);
+      if($('#mail_info_client').prop("checked")){
+        var type_email_name =$("input[name=MED_refus_indemnite]:checked").attr('id');
+        var type_email_modifiable = $('#modifier_mail_infos_client').prop("checked");
+        var type_email = "{\"name\":\""+type_email_name+"\", \"modifiable\":"+type_email_modifiable+" }";
+        click_action(workOff,"generer_emails_gas_gestion_doc",type_email);
+      }
+      return false
+  });
+  $("#affect_avocat").submit(function(){
+    var avocat=$("#choix_avocats :selected").text();
+    click_action(workOff,"affecter_avocat_current_range",avocat);
+    return false
+    
+  });
+
+  $("#indemn_acceptee").submit(function(){
+    var documents=$("#ref_dossier").val();
+    var tracer="{\"type\":\"tracer\",\"id\":\"\",\"copie\":0, \"contenu\":";
+    if($('#mail_info_client').prop("checked")){
+      var type_email = "{\"name\":\""+$(this).attr('id')+"\", \"modifiable\":"+$('#modifier_mail_infos_client').prop("checked")+" }";
+      click_action(workOff,"generer_emails_gas_gestion_doc",type_email);
+      tracer=tracer+"[{\"Type event\":\"->Client\",\"Evenement\":\"Mail info indemnisation acceptée\",\"Date\":\"\",\"Prochain évènement\":\"-\",\"Date prévue\":\"-\",\"Statut dossier\":\"Indemnisation acceptée par la compagnie\",\"Document relatif\":\"\",\"Canal\":\"\",\"Commentaire\":\"\"},";
+      tracer=tracer+"{\"Type event\":\"<-Compagnie\",\"Evenement\":\"Indemnisation acceptée\",\"Date\":\"\",\"Prochain évènement\":\"Attente du virement de la compagnie\",\"Date prévue\":\"J+30\",\"Statut dossier\":\"Attente du virement de la compagnie\",\"Document relatif\":\""+documents+"\",\"Canal\":\"\",\"Commentaire\":\"\"}]}";
+    }
+    else{
+      tracer=tracer+"[{\"Type event\":\"<-Compagnie\",\"Evenement\":\"Indemnisation acceptée\",\"Date\":\"\",\"Prochain évènement\":\"Attente du virement de la compagnie\",\"Date prévue\":\"J+30\",\"Statut dossier\":\"Attente du virement de la compagnie\",\"Document relatif\":\""+documents+"\",\"Canal\":\"\",\"Commentaire\":\"\"}]}";
+    }
+    click_action(workOff,"set_tracer",tracer);
+
+    return false
+  });
+
+  $("#rappel_rib").click(function(){
+    if($('#mail_info_client').prop("checked")){
+      var type_email = "{\"name\":\""+$(this).attr('id')+"\", \"modifiable\":"+$('#modifier_mail_infos_client').prop("checked")+" }";
+      click_action(workOff,"generer_emails_gas_gestion_doc",type_email);
+    }
+   return false
+  });
+  
+  
+  $("#reception_rib").click(function(){
+    if($('#mail_info_client').prop("checked")){
+      var type_email = "{\"name\":\""+$(this).attr('id')+"\", \"modifiable\":"+$('#modifier_mail_infos_client').prop("checked")+" }";
+      click_action(workOff,"generer_emails_gas_gestion_doc",type_email);
+    }
+    else{
+      var tracer="{\"type\":\"tracer\",\"id\":\"\",\"copie\":true, \"contenu\":[{\"Type event\":\"-> Client\",\"Evenement\":\"Réception RIB OK\",\"Date\":\"\",\"Prochain évènement\":\"-\",\"Date prévue\":\"\",\"Statut dossier\":\"Indemnisation acceptée par la compagnie\",\"Document relatif\":\"\",\"Canal\":\"\",\"Commentaire\":\"\"}]}";
+      click_action(workOff,"set_tracer",tracer);  
+    }
+   return false
+  });
+
+  $("#generer_facture").click(function(){
+    if($('#mail_info_client').prop("checked")){
+       var type_email = "{\"name\":\"indemnisation_versee\", \"modifiable\":"+$('#modifier_mail_infos_client').prop("checked")+"}";
+
+       if($("#trustpilot").prop("checked")){
+          type_email=type_email.substring(0,type_email.length-1)+",\"copie cachée\":\"vasileva.vesela@gmail.com\"}";
+        }
+
+       click_action(workOff,"generer_emails_gas_gestion_doc",type_email);
+    }
+    
+    click_action(workOff,"generer_facture_current_range","");
+    var tracer="{\"type\":\"tracer\",\"id\":\"\",\"copie\":0, \"contenu\":[{\"Type event\":\"->Client\",\"Evenement\":\"Info virement effectué\",\"Date\":\"\",\"Prochain évènement\":\"-\",\"Date prévue\":\"-\",\"Statut dossier\":\"Virement effectué\",\"Document relatif\":\"\",\"Canal\":\"\",\"Commentaire\":\"\"},";
+    tracer=tracer+"{\"Type event\":\"Interne\",\"Evenement\":\"Facture générée\",\"Date\":\"\",\"Prochain évènement\":\"Archiver dossier indemnisé\",\"Date prévue\":\"\",\"Statut dossier\":\"Dossier archivé indemnisé\",\"Document relatif\":\"\",\"Canal\":\"\",\"Commentaire\":\"\"}]}"
+    click_action(workOff,"set_tracer",tracer);
+  });
+
+
+  $("#calcul_reverse").click(function(){
+    google.script.run.start_function("calcul_indemnite_current_range","");
+  });
+
+  $("#set_environnement").click(function(){
+    click_action(workOff,"set_environnement_saisine_current_range","");
+  })
+
+  $("#tracer_saisine").click(function(){
+    var tracer="{\"type\":\"tracer\",\"id\":\"\",\"copie\":0, \"contenu\":[{\"Type event\":\"Interne\",\"Evenement\":\"Préparation saisine Indemniflight OK\",\"Date\":\"\",\"Prochain évènement\":\"Générer saisine par avocat\",\"Date prévue\":\"\",\"Statut dossier\":\"Assignation en justice\",\"Document relatif\":\"\",\"Canal\":\"\",\"Commentaire\":\"\"}]}";
+    google.script.run.start_function("set_tracer",tracer);
+    tracer="{\"type\":\"tracer_avocat\",\"id\":\"\",\"copie\":0, \"contenu\":[{\"Evenement\":\"Saisine préparée par Indemniflight\",\"Date\":\"\",\"Prochain évènement\":\"Générer saisine\",\"Date prévue\":\"\",\"Status avocat\":\"Assignation en justice\",\"Commentaire\":\"\"}]}";
+    click_action(workOff,"set_tracer",tracer);
+  });
+
+  $("#archiver").submit(function(){
+    var arguments="{\"motif\":\""+$("input[name=motif_archive]:checked").val()+"\",\"commentaire\" :\""+$("#commentaire_archive").val()+"\",";
+    arguments=arguments+"\"name\":\"archivage_dossier_"+$("input[name=motif_archive]:checked").attr('id')+"\", \"modifiable\":"+$('#modifier_mail_infos_client').prop("checked")+",";
+    arguments=arguments+"\"envoi_email_client\":"+$('#mail_info_client').prop("checked")+"}";
+    if($("#archive_verif").prop('checked')){
+      click_action(workOff,"archiver_dossiers_current_range",arguments);
+    }
+    else{
+      confirm("Voulez archiver le dossier?");
+    }
+      return false;
+  });
+
+    $("#desarchiver").submit(function(){
+    var arguments="{\"motif\":\""+$("input[name=motif_desarchive]:checked").val()+"\",\"commentaire\" :\""+$("#commentaire_desarchive").val()+"\"}";
+    if($("#desarchive_verif").prop('checked')){
+      click_action(workOff,"desarchiver_dossiers_current_range",arguments);
+    }
+    else{
+      confirm("Voulez archiver le dossier?");
+    }
+      return false;
+  });
+
+  $("#log_reference").click(function(){
+    click_action(workOff,"logue_reference_gas","");
+  })
+
+
+  $('input[name=appel_client]').click(function(){
+    var type_appel = $(this).attr('id');
+
+    var evenement;
+    var proch_event;
+    var statut;
+    var date_prevue;
+    var canal="téléphone";
+    var commentaire=$('input[name=appel_client_commentaire]').val();
+
+    switch (type_appel){
+
+      case "appel_client_call_effectif":
+        evenement = "Appel client call effectif";
+        proch_event = "Rappel demande doc";
+        statut = "Attente des documents";
+        date_prevue = "J+5";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client call effectif",
+          "commentaire" : commentaire
+        };
+
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+      break;
+
+      case "appel_client_call_effectif_a_recontact":
+        evenement = "Appel client call effectif client à recontacter";
+        proch_event = "Rappel demande doc";
+        statut = "Attente des documents";
+        date_prevue = "J+30";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client call effectif client à recontacter",
+          "commentaire" : commentaire
+        };
+
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+      break;
+
+      case "appel_client_call_effectif_dossier_doublons":
+        evenement = "Appel client call effectif dossier doublons";
+        proch_event = "Archiver dossier doublons";
+        statut = "Archivé doublons";
+        date_prevue = "";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client call effectif dossier doublons",
+          "commentaire" : commentaire
+        };
+
+        var param_archive = {
+          "envoi_email_client" : false,
+          "motif" : "Archivé dossier en doublon",
+          "commentaire" : commentaire,
+          "name" : "N/A",
+          "modifiable" : false
+        }
+
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+        click_action(workOff,"archiver_dossiers_current_range",toStringJSON_from_object(param_archive));
+      break;
+
+      case "appel_client_call_effectif_dossier_non_eligible":
+        evenement = "Appel client call effectif dossier non éligible";
+        proch_event = "Archiver dossier non éligible";
+        statut = "Archivé non éligible";
+        date_prevue = "J+30";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client call effectif dossier non éligible",
+          "commentaire" : commentaire
+        };
+        
+        var param_archive = {
+          "envoi_email_client" : false,
+          "motif" : "Non indemnisable avant confrontation avec la compagnie:hors réglementaion",
+          "commentaire" : commentaire,
+          "name" : "N/A",
+          "modifiable" : false
+        }
+
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+        click_action(workOff,"archiver_dossiers_current_range",toStringJSON_from_object(param_archive));
+      break;
+
+      case "appel_client_call_effectif_abandon_trop_cher":
+        evenement = "Appel client call effectif abandon service trop cher";
+        proch_event = "Archivé dossier sur demande";
+        statut = "Archivé sur demande";
+        date_prevue = "";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client call effectif abandon service trop cher",
+          "commentaire" : commentaire
+        };
+
+        var param_archive = {
+          "envoi_email_client" : false,
+          "motif" : "Archivé sur demande du client",
+          "commentaire" : commentaire,
+          "name" : "N/A",
+          "modifiable" : false
+        }
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+        click_action(workOff,"archiver_dossiers_current_range",toStringJSON_from_object(param_archive));
+      break;
+
+      case "appel_client_call_effectif_abandon_concurrent":
+        evenement = "Appel client call effectif abandon pris en charge par concurrent";
+        proch_event = "Archivé dossier sur demande";
+        statut = "Archivé sur demande";
+        date_prevue = "";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client call effectif abandon pris en charge par concurrent",
+          "commentaire" : commentaire
+        };
+
+        var param_archive = {
+          "envoi_email_client" : false,
+          "motif" : "Archivé sur demande du client",
+          "commentaire" : commentaire,
+          "name" : "N/A",
+          "modifiable" : false
+        }
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+        click_action(workOff,"archiver_dossiers_current_range",toStringJSON_from_object(param_archive));
+      break;
+
+      case "appel_client_call_effectif_abandon_autonome":
+        evenement = "Appel client call effectif abandon démarche autonome";
+        proch_event = "Archivé dossier sur demande";
+        statut = "Archivé sur demande";
+        date_prevue = "";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client call effectif abandon démarche autonome",
+          "commentaire" : commentaire
+        };
+
+        var param_archive = {
+          "envoi_email_client" : false,
+          "motif" : "Archivé sur demande du client",
+          "commentaire" : commentaire,
+          "name" : "N/A",
+          "modifiable" : false
+        }
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+        click_action(workOff,"archiver_dossiers_current_range",toStringJSON_from_object(param_archive));
+      break;
+
+      case "appel_client_repondeur":
+        evenement = "Appel client répondeur";
+        proch_event = "Rappel demande doc";
+        statut = "Attente des documents";
+        date_prevue = "J+5";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client répondeur",
+          "commentaire" : commentaire
+        };
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+      break;
+
+      case "appel_client_pas_de_reponse":
+        evenement = "Appel client pas de réponse";
+        proch_event = "Rappel demande doc";
+        statut = "Attente des documents";
+        date_prevue = "J+5";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client pas de réponse",
+          "commentaire" : commentaire
+        };
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+      break;
+
+      case "appel_client_faux_numero":
+        evenement = "Appel client faux numéro";
+        proch_event = "Rappel demande doc";
+        statut = "Attente des documents";
+        date_prevue = "J+5";
+
+        var param_log_appel = {
+          "type_appel" : "appel_client",
+          "result" : "Appel client faux numéro",
+          "commentaire" : commentaire
+        };
+        update_tracer(evenement,"",proch_event,date_prevue,statut,canal,commentaire);
+        click_action(workOff,"logger_appel_client",toStringJSON_from_object(param_log_appel));
+        click_action(workOff,"clear_phone_number","");
+      break;
+    }
+
+    var e = "{\"message\":\"Tracer Mis à jour\"}";
+    workOff(e);
+
+  });
+
+});
+
+///////////////////////////////////////Fonctions support////////////////////////////////////////////////////////
+function toStringJSON(id){
+    var fields = $( "#"+id ).serializeArray();
+    var fields_string = "{";
+    var field_tmp = "";
+  
+    fields.forEach(function(field) {
+        //traitement des caractères spéciaux pour pas gêner le js
+        field_tmp = field.value.replace( /\r\n/g,"<br />");
+        field_tmp = field_tmp.replace( /\t/g,"");
+        fields_string += "\"" + field.name +"\" : \"" + field_tmp + "\",";
+    });
+    fields_string = fields_string.substring(0,fields_string.length-1);
+    fields_string += "}";
+    
+    fields_string = fields_string.replace("\"<##","");
+    fields_string = fields_string.replace("##>\"","");
+    return fields_string;
+  }
+
+  function toStringJSON_from_object(items){
+    var fields_string = "{";
+    var field_tmp = "";
+   for(var i in items){
+       //traitement des caractères spéciaux pour pas gêner le js
+       field_tmp = items[i].toString().replace( /(\n)|(\r)/g,"<br />");
+       field_tmp = field_tmp.replace( /\t/g,"");
+       if(i == "tracer"){
+         fields_string += "\"" + i +"\" : " + field_tmp + ",";
+       }else{
+         fields_string += "\"" + i +"\" : \"" + field_tmp + "\",";
+       }
+    }
+    fields_string = fields_string.substring(0,fields_string.length-1);
+    fields_string += "}";
+    return fields_string;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  //Permet d'afficher le formulaire de l'action choisie et cacher les autres
+  function getaction(e){
+      var select=$("#action option:selected").val();
+      var elems=$(".element");
+      for (var i=0; i<elems.length;i++){
+        elems.css("display","none");
+       }
+       $("#"+ select).css("display","block");
+       $("input[type=radio]").prop("checked", false);
+       $("input[type=checkbox][name!='mail_info_client']").prop("checked", false);
+       $("input[type=text]").val("");
+   }
+   
+    //Géénère le contenu de la liste déroulante "Envoyer un mail à partir d'un template"...
+    function remplir_liste_deroulante_mails(classification_mails){
+      var menu_mails_html = "";
+      for(var i in classification_mails){
+        menu_mails_html += "<optgroup label=\"" + i + "\">"
+        for(var j in classification_mails[i]){
+          menu_mails_html += "<option value=\"\">" + classification_mails[i][j] + "</option>";
+        }
+        menu_mails_html += "</optgroup>";
+      }
+      $('#select_email').html(menu_mails_html);
+    }
+
+//Génère la liste déroulante des avocats
+function remplir_liste_deroulante_avocats(liste_avocats){
+  var menu_avocats_html="";
+  for(var i in liste_avocats){
+    menu_avocats_html=menu_avocats_html+"<option value=\"\">"+liste_avocats[i]+"</option>";
+  }
+  $("#choix_avocats").html(menu_avocats_html);
+}
+
+
+    ///////////////////// FONCTION QUI OUVRE DANS DE NOUVEAUX ONGLETS TOUS LES SPREADSHEETS CONTENUS DANS LE TABLEAU EN ARGUMENT. /////////////////////
+    
+    function open_spreadsheets(liste_ids_spreadsheets){
+      if(liste_ids_spreadsheets.length > 0){
+        for(var i in liste_ids_spreadsheets){
+          window.open("https://docs.google.com/spreadsheets/d/"+ liste_ids_spreadsheets[i] +"/edit", '_blank');
+        }
+        workOff("{\"message\":\""+liste_ids_spreadsheets.length+" fichier(s) ouvert(s).\"}");
+      }
+      else{ workOff("{\"message\":\""+liste_ids_spreadsheets.length+" fichier(s) introuvable(s).\"}");}
+    }
+    
+    ///////////////////// FONCTION QUI OUVRE DANS DE NOUVEAUX ONGLETS TOUS LES FOLDERS CONTENUS DANS LE TABLEAU EN ARGUMENT. /////////////////////
+    function open_dossiers(liste_ids_dossiers){
+      if(liste_ids_dossiers.length > 0){
+        for(var i in liste_ids_dossiers){
+          window.open("https://drive.google.com/drive/folders/"+ liste_ids_dossiers[i], '_blank');
+          window.blur();
+          window.focus();
+        }
+        workOff("{\"message\":\""+ liste_ids_dossiers.length+" dossier(s) ouvert(s).\"}");
+      }
+      else{
+        workOff("{\"message\":\""+liste_ids_dossiers.length+" dossier(s) introuvable(s).\"}");
+      }
+    }
+    
+    //////////////////////////// Fonction d'envoi d'emails à partir des templates de la console////////////////////////////
+    
+    function envoyer_email(){
+          var string_arguments=toStringJSON('dialog_box');
+          var arguments=JSON.parse(string_arguments);
+          var pj =[];
+          $('input[name=pj]:checked').each(function(){
+              pj.push($(this).val());
+          })
+           arguments['pj']=pj;
+           string_arguments=JSON.stringify(arguments);
+           google.script.run.withSuccessHandler(workOff).start_function("envoyer_email_gas",string_arguments);
+          
+
+
+    }
+  
+  ///////////////////////////////////Gestion courrier amiable///////////////////////////////////////             
+    function copy_to_PP(corps){
+      if(corps.match(/Erreur/g)!=null){
+        workOff(corps);
+      }
+      else{
+        $("#tamponCourrier").text(corps);
+        workOff("{\"message\":\"Document chargé\",\"tracer\":\"\"}");
+      }
+        return false;
+    }
+    
+    function copier(){
+       var txtareea=document.getElementById('tamponCourrier');
+       var btnCopyFr=document.getElementById('copierCourrierReclamFr');
+     
+     btnCopyFr.addEventListener('click',function(){
+         document.getElementById('tamponCourrier');
+         txtareea.select();
+         document.execCommand('copy');
+         btnCopyFr.classList.add( 'copied' );
+    
+         var temp = setInterval( function(){
+            btnCopyFr.classList.remove( 'copied' );
+            clearInterval(temp);
+         }, 600 );
+         return false;
+     });
+    }
+  //////////////////////////////////FONCTION OUVRIR WORKON//////////////////////////////////////////////
+    function workOn(){
+      $("#message").append("Working...");
+    }
+  //////////////////////////////////FONCTION OUVRIR WORKOFF////////////////////////////////////////////
+    function workOff(e){
+      //console.log("Message transmis à workOff "+ e);
+      google.script.run.withSuccessHandler().start_function("actu_infos_console","");
+      e=JSON.parse(e);
+      //Mise à jour du message dans la console de gestion
+      $("#message").append(" : "+ e['message'] +"<br />");
+   }
+   
+   function update_tracer(evenement,date,proch_event,date_prevue,statut,canal,commentaire){
+     var tracer = "{\"type\":\"tracer\",\"id\":\"\",\"copie\":\"false\",\"contenu\":[{\"Type event\":\"Interne\",\"Evenement\":\""+evenement+"\",";
+     tracer=tracer+"\"Date\":\""+date+"\",\"Prochain évènement\":\""+proch_event+"\",\"Date prévue\":\""+date_prevue+"\",\"Statut dossier\":\""+statut;
+     tracer=tracer+"\",\"Document relatif\":\"\",\"Canal\":\""+canal+"\",\"Commentaire\":\""+commentaire+"\"}]}";
+     google.script.run.start_function("set_tracer",tracer);
+   }
+
+   function click_action(javascript_funct,gas_funct,gas_param){
+    workOn();
+      google.script.run.withSuccessHandler(javascript_funct).start_function(gas_funct,gas_param);
+   }
+</script>
